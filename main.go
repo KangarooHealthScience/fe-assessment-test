@@ -18,7 +18,7 @@ import (
 
 type Todo struct {
 	ID        string    `json:"id"`
-	Name      string    `json:"Name"`
+	Name      string    `json:"name"`
 	Details   string    `json:"details"`
 	Done      bool      `json:"done"`
 	CreatedAt time.Time `json:"created_at"`
@@ -81,9 +81,14 @@ func main() {
 }
 
 func LoginUser(w http.ResponseWriter, r *http.Request) {
-	username, _, ok := r.BasicAuth()
+	username, password, ok := r.BasicAuth()
 	if !ok {
 		writeResponse(w, "error", nil, fmt.Errorf("unable to complete auth"))
+		return
+	}
+
+	if !(username == "kangaroohealth" && password == "the magnificent chicken") {
+		writeResponse(w, "error", nil, fmt.Errorf("invalid username and/or password"))
 		return
 	}
 
@@ -101,18 +106,19 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTodoList(w http.ResponseWriter, r *http.Request) {
-	// _, claims, _ := jwtauth.FromContext(r.Context())
-
 	writeResponse(w, "ok", todosAsSlice(), nil)
 }
 
 func AddTodoList(w http.ResponseWriter, r *http.Request) {
-	// _, claims, _ := jwtauth.FromContext(r.Context())
-
 	todo := new(Todo)
 	err := json.NewDecoder(r.Body).Decode(todo)
 	if err != nil {
 		writeResponse(w, "error", nil, err)
+		return
+	}
+
+	if todo.Name == "" {
+		writeResponse(w, "error", nil, fmt.Errorf("name cannot be empty"))
 		return
 	}
 
@@ -127,14 +133,20 @@ func AddTodoList(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateTodoList(w http.ResponseWriter, r *http.Request) {
-	// _, claims, _ := jwtauth.FromContext(r.Context())
-
 	todoID := chi.URLParam(r, "todoID")
+	if todoID == "" {
+		writeResponse(w, "error", nil, fmt.Errorf("todoID cannot be empty"))
+		return
+	}
 
 	patch := new(Todo)
 	err := json.NewDecoder(r.Body).Decode(patch)
 	if err != nil {
 		writeResponse(w, "error", nil, err)
+		return
+	}
+	if patch.Name == "" {
+		writeResponse(w, "error", nil, fmt.Errorf("name cannot be empty"))
 		return
 	}
 
@@ -145,6 +157,7 @@ func UpdateTodoList(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		err = fmt.Errorf("todo with id %s does not exists", todoID)
 		writeResponse(w, "error", nil, err)
+		return
 	}
 
 	mtx.Lock()
@@ -158,9 +171,11 @@ func UpdateTodoList(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteTodoList(w http.ResponseWriter, r *http.Request) {
-	// _, claims, _ := jwtauth.FromContext(r.Context())
-
 	todoID := chi.URLParam(r, "todoID")
+	if todoID == "" {
+		writeResponse(w, "error", nil, fmt.Errorf("todoID cannot be empty"))
+		return
+	}
 
 	mtx.RLock()
 	_, ok := todos[todoID]
