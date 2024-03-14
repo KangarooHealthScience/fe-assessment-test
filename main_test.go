@@ -15,27 +15,29 @@ type ResponseTODO struct {
 }
 
 const BASE_URL = "http://localhost:3000"
-const DEBUG = false
+const DEBUG = true
 
 var accessToken = ""
 
 func TestLogin(t *testing.T) {
 	res, err := resty.New().
 		R().
-		SetBasicAuth("noval", "agung").
+		SetBasicAuth("kangaroohealth", "the magnificent chicken").
 		Post(BASE_URL + "/api/login")
-	if err != nil {
-		t.Error(err)
-	}
-
 	if DEBUG {
 		log.Println("raw response body", string(res.Body()))
+	}
+	if err != nil {
+		t.Error(err)
 	}
 
 	resBody := Response{}
 	err = json.Unmarshal(res.Body(), &resBody)
 	if err != nil {
 		t.Error(err)
+	}
+	if resBody.Data == nil {
+		t.Error("empty access token")
 	}
 
 	accessToken = resBody.Data.(string)
@@ -54,12 +56,11 @@ func TestAddTodo(t *testing.T) {
 		SetHeader("Content-type", "application/json").
 		SetBody(payload).
 		Post(BASE_URL + "/api/todo")
-	if err != nil {
-		t.Error(err)
-	}
-
 	if DEBUG {
 		log.Println("raw response body", string(res.Body()))
+	}
+	if err != nil {
+		t.Error(err)
 	}
 
 	resBody := ResponseTODO{}
@@ -90,12 +91,11 @@ func TestGetTodo(t *testing.T) {
 		R().
 		SetAuthToken(accessToken).
 		Get(BASE_URL + "/api/todo")
-	if err != nil {
-		t.Error(err)
-	}
-
 	if DEBUG {
 		log.Println("raw response body", string(res.Body()))
+	}
+	if err != nil {
+		t.Error(err)
 	}
 
 	resBody := ResponseTODO{}
@@ -123,12 +123,11 @@ func TestUpdateTodo(t *testing.T) {
 		R().
 		SetAuthToken(accessToken).
 		Get(BASE_URL + "/api/todo")
-	if err != nil {
-		t.Error(err)
-	}
-
 	if DEBUG {
 		log.Println("raw response body", string(res.Body()))
+	}
+	if err != nil {
+		t.Error(err)
 	}
 
 	resBody := ResponseTODO{}
@@ -147,12 +146,11 @@ func TestUpdateTodo(t *testing.T) {
 		SetHeader("Content-type", "application/json").
 		SetBody(sample).
 		Put(BASE_URL + "/api/todo/" + sample.ID)
-	if err != nil {
-		t.Error(err)
-	}
-
 	if DEBUG {
 		log.Println("raw response body", string(res.Body()))
+	}
+	if err != nil {
+		t.Error(err)
 	}
 
 	resBody = ResponseTODO{}
@@ -183,12 +181,11 @@ func TestDeleteTodo(t *testing.T) {
 		R().
 		SetAuthToken(accessToken).
 		Get(BASE_URL + "/api/todo")
-	if err != nil {
-		t.Error(err)
-	}
-
 	if DEBUG {
 		log.Println("raw response body", string(res.Body()))
+	}
+	if err != nil {
+		t.Error(err)
 	}
 
 	resBody := ResponseTODO{}
@@ -204,12 +201,11 @@ func TestDeleteTodo(t *testing.T) {
 		R().
 		SetAuthToken(accessToken).
 		Delete(BASE_URL + "/api/todo/" + sample.ID)
-	if err != nil {
-		t.Error(err)
-	}
-
 	if DEBUG {
 		log.Println("raw response body", string(res.Body()))
+	}
+	if err != nil {
+		t.Error(err)
 	}
 
 	resBody = ResponseTODO{}

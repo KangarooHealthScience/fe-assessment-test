@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -34,25 +35,12 @@ var host = "0.0.0.0:3000"
 var todos = make(map[string]Todo)
 var mtx = new(sync.RWMutex)
 var tokenAuth *jwtauth.JWTAuth
+var currentSessionID = ""
 
 func init() {
 	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
 }
 
-// @title KH FE Assessment Test
-// @version 1.0
-// @description This is the web service of simple TODO list app
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host petstore.swagger.io
-// @BasePath /api
 func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -62,8 +50,7 @@ func main() {
 			r.Post("/login", LoginUser)
 
 			r.Route("/todo", func(r chi.Router) {
-				r.Use(jwtauth.Verifier(tokenAuth))
-				r.Use(jwtauth.Authenticator(tokenAuth))
+				r.Use(JWTAuthenticator)
 				r.Get("/", GetTodoList)
 				r.Post("/", AddTodoList)
 				r.Put("/{todoID}", UpdateTodoList)
@@ -80,6 +67,37 @@ func main() {
 	http.ListenAndServe(host, r)
 }
 
+func JWTAuthenticator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		authorizationHeader := r.Header.Get("Authorization")
+		if !strings.Contains(authorizationHeader, "Bearer") {
+			writeResponse(w, "error", nil, fmt.Errorf("invalid token"))
+			return
+		}
+
+		tokenString := strings.ReplaceAll(authorizationHeader, "Bearer ", "")
+		token, err := tokenAuth.Decode(tokenString)
+		if err != nil {
+			writeResponse(w, "error", nil, fmt.Errorf("invalid token. %w", err))
+			return
+		}
+
+		claims, err := token.AsMap(context.TODO())
+		if err != nil {
+			writeResponse(w, "error", nil, fmt.Errorf("invalid token. %w", err))
+			return
+		}
+
+		if claims["id"].(string) != currentSessionID {
+			writeResponse(w, "error", nil, fmt.Errorf("invalid token. %w", err))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	username, password, ok := r.BasicAuth()
 	if !ok {
@@ -92,8 +110,9 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentSessionID = uuid.New().String()
 	claims := map[string]interface{}{
-		"id":       uuid.New().String(),
+		"id":       currentSessionID,
 		"username": username,
 	}
 	_, tokenString, err := tokenAuth.Encode(claims)
