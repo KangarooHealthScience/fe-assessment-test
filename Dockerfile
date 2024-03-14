@@ -7,9 +7,9 @@ RUN apk add --no-cache git
 WORKDIR /app
 COPY go.mod go.mod
 RUN go mod download
-COPY cmd cmd
+COPY . .
 
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o binary ./cmd/
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o binary
 
 # release stage
 FROM alpine:latest as stage-release
