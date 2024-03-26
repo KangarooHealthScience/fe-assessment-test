@@ -40,9 +40,7 @@ $ docker run -it -p 3000:3000 --rm ghcr.io/kangaroohealthscience/fe-assessment-t
 
 With above command, the web service shall be accessible via `http://localhost:3000`
 
-## Web Serviec API
-
-This web service is built with the default CORS configuration enabled, so you might get an error when accessing it from the browser. We would love to know how you troubleshoot this type of security constraint.
+> IMPORTANT! This web service is built with the default CORS configuration enabled, so you might get an error when accessing it from the browser. We would love to know how you troubleshoot this type of security constraint.
 
 ### Auth Login
 
